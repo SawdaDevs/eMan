@@ -30,7 +30,8 @@ const Home = () => {
     const [currentNumberOfDays, changeNumberofDays] = useState(initNumberofDays);
     const [location, setLocation] = useState(null)
     const [errorMessage, setErrorMessage] = useState("Oops, something went wrong!");
-
+    const[salahTimesToday, setSalahTimesToday] = useState({})
+    const locationAPIKey = process.env.LOCATION_API_KEY
 
     const getLocation = useCallback(() => {
         if (Platform.OS === 'android' && !Constants.isDevice) {
@@ -38,21 +39,45 @@ const Home = () => {
                 'Oops, this will not work on Sketch in an Android emulator. Try it on your device!'
             );
         } else {
-            (async () => {
-                let { status } = await Location.requestPermissionsAsync();
-                if (status !== 'granted') {
-                    setErrorMessage('Permission to access location was denied');
+            Location.getPermissionsAsync().then(res => {
+                if (res.status == 'granted') {
+                    Location.getCurrentPositionAsync().then(result => {
+                        console.log("this is the result of getting GeoLocation", result)
+                        setLocation(result)
+                        // console.log(new Date().getTime())
+                        console.log("location", result.timestamp)
+                        getSalahTimes(result.timestamp, result.coords.longitude, result.coords.latitude);
+                    }).catch(" an error with getting geolocation", err)
                 }
-
-                let location = await Location.getCurrentPositionAsync({});
-                setLocation(location);
-                console.log(location)
-            })();
+            }).catch(err=>{
+                console.log("an error with Geolocation permissions", err)
+            })
         }
+    }, []);//get location
 
-    }, []);
+    const getSalahTimes = useCallback( (timestamp, longitude, latitude) => {
+        fetch(`http://api.aladhan.com/v1/timings/${timestamp}?latitude=${longitude}&longitude=${latitude}&method=2`).then(result => {
+            result.json().then(res=>{
+                console.log(res.data.timings)
+                setSalahTimesToday(res.data.timings) //sets salah times for today
+                
+            }).catch(err=>{
+                console.log("there's been an error with prayertime fetch2", err)
+            })
+        }).catch(err=>{console.warn(err)})
+    }, []) //gets initial salah times for that day and place
+
+    const getRevLocation = useCallback(()=>{
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=${locationAPIKey}`).then(result=>{
+            result.json().then(res=>{
+                console.log(res)
+            })
+        })
+    },[])
     useEffect(() => {
         getLocation();
+        getRevLocation();
+
     }, [])
     return (
         <View>
