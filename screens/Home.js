@@ -5,6 +5,7 @@ import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
+
 // import { FlatList } from 'react-native-gesture-handler';
 const initCurrentDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDate()
 const initCurrentDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay()
@@ -31,6 +32,9 @@ const Home = () => {
     const [location, setLocation] = useState(null)
     const [errorMessage, setErrorMessage] = useState("Oops, something went wrong!");
     const[salahTimesToday, setSalahTimesToday] = useState({})
+    const [locationHuman, setLocationHuman] = useState("")
+
+    
     const locationAPIKey = process.env.LOCATION_API_KEY
 
     const getLocation = useCallback(() => {
@@ -47,6 +51,7 @@ const Home = () => {
                         // console.log(new Date().getTime())
                         console.log("location", result.timestamp)
                         getSalahTimes(result.timestamp, result.coords.longitude, result.coords.latitude);
+                        getRevLocation(result.coords.latitude,result.coords.longitude)
                     }).catch(" an error with getting geolocation", err)
                 }
             }).catch(err=>{
@@ -67,17 +72,18 @@ const Home = () => {
         }).catch(err=>{console.warn(err)})
     }, []) //gets initial salah times for that day and place
 
-    const getRevLocation = useCallback(()=>{
-        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=${locationAPIKey}`).then(result=>{
+    const getRevLocation = useCallback((lat, lon)=>{
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${locationAPIKey}`).then(result=>{
             result.json().then(res=>{
-                console.log(res)
+                console.log(res.results);
+                console.log(res.results[3].formatted_address)//the approximate place of user, neighbourhood
+                setLocationHuman(res.results[3].formatted_address)
             })
         })
-    },[])
+    },[location]); //get human location details for latitude and longitude of location
+
     useEffect(() => {
         getLocation();
-        getRevLocation();
-
     }, [])
     return (
         <View>
