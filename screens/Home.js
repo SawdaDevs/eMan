@@ -8,6 +8,7 @@ import * as Location from 'expo-location';
 import { Picker } from '@react-native-picker/picker';
 
 // import { FlatList } from 'react-native-gesture-handler';
+
 let currentDateTime = new Date()
 const initCurrentDate = new Date().getDate()
 const initCurrentDay = new Date(new Date().getFullYear(), new Date().getMonth()).getDay()
